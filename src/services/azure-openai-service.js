@@ -4,13 +4,17 @@
  * Simplified service for interacting with Azure OpenAI using LangChain
  */
 
-import { AzureChatOpenAI } from '@langchain/azure-openai';
-import { HumanMessage, SystemMessage, AIMessage } from '@langchain/core/messages';
-import { StringOutputParser } from '@langchain/core/output_parsers';
-import { Logger } from '../utils/logger.js';
-import { ErrorHandler, AzureOpenAIError } from '../utils/errors.js';
-import { RetryWrapper } from '../utils/retry.js';
-import { azureConfig } from '../config/config.js';
+import { AzureChatOpenAI } from "@langchain/azure-openai";
+import {
+  HumanMessage,
+  SystemMessage,
+  AIMessage,
+} from "@langchain/core/messages";
+import { StringOutputParser } from "@langchain/core/output_parsers";
+import { Logger } from "../utils/logger.js";
+import { ErrorHandler, AzureOpenAIError } from "../utils/errors.js";
+import { RetryWrapper } from "../utils/retry.js";
+import { azureConfig } from "../config/config.js";
 
 /**
  * Azure OpenAI Service class
@@ -19,7 +23,7 @@ export class AzureOpenAIService {
   constructor(config = {}) {
     this.config = {
       ...azureConfig,
-      ...config
+      ...config,
     };
 
     this.model = null;
@@ -37,27 +41,29 @@ export class AzureOpenAIService {
    */
   async initialize() {
     try {
-      Logger.info('Initializing Azure OpenAI Service');
+      Logger.info("Initializing Azure OpenAI Service");
 
       this.model = new AzureChatOpenAI({
         azureOpenAIApiKey: this.config.apiKey,
-        azureOpenAIApiInstanceName: this.extractInstanceName(this.config.endpoint),
+        azureOpenAIApiInstanceName: this.extractInstanceName(
+          this.config.endpoint
+        ),
         azureOpenAIApiDeploymentName: this.config.deploymentName,
         azureOpenAIApiVersion: this.config.apiVersion,
         temperature: this.config.temperature,
         maxTokens: this.config.maxTokens,
         streaming: false,
-        verbose: process.env.NODE_ENV === 'development',
+        verbose: process.env.NODE_ENV === "development",
       });
 
       // Test connection
       await this.testConnection();
 
-      Logger.info('Azure OpenAI Service initialized successfully');
+      Logger.info("Azure OpenAI Service initialized successfully");
       return this;
     } catch (error) {
-      const handledError = ErrorHandler.handle(error, 'initialization');
-      Logger.error('Failed to initialize Azure OpenAI Service', handledError);
+      const handledError = ErrorHandler.handle(error, "initialization");
+      Logger.error("Failed to initialize Azure OpenAI Service", handledError);
       throw handledError;
     }
   }
@@ -66,9 +72,11 @@ export class AzureOpenAIService {
    * Extract instance name from endpoint
    */
   extractInstanceName(endpoint) {
-    const match = endpoint.match(/https:\/\/(.+?)\.openai\.azure\.com/);
+    const match = endpoint.match(
+      /https:\/\/(.+?)\.cognitiveservices\.azure\.com/
+    );
     if (!match) {
-      throw new AzureOpenAIError('Invalid Azure OpenAI endpoint format');
+      throw new AzureOpenAIError("Invalid Azure OpenAI endpoint format");
     }
     return match[1];
   }
@@ -78,12 +86,12 @@ export class AzureOpenAIService {
    */
   async testConnection() {
     try {
-      const testMessage = new HumanMessage('Hello');
+      const testMessage = new HumanMessage("Hello");
       await this.model.invoke([testMessage]);
-      Logger.info('Connection test successful');
+      Logger.info("Connection test successful");
     } catch (error) {
-      throw new AzureOpenAIError('Connection test failed', 500, {
-        originalError: error.message
+      throw new AzureOpenAIError("Connection test failed", 500, {
+        originalError: error.message,
       });
     }
   }
@@ -104,7 +112,7 @@ export class AzureOpenAIService {
       const messages = this.buildMessages(input, options);
 
       // Log the prompt
-      Logger.logPrompt('chat', JSON.stringify(messages), null, {});
+      Logger.logPrompt("chat", JSON.stringify(messages), null, {});
 
       // Execute with retry logic
       const response = await RetryWrapper.execute(async () => {
@@ -120,7 +128,7 @@ export class AzureOpenAIService {
       // Update metrics
       this.updateMetrics(Date.now() - startTime, true);
 
-      Logger.logApiCall('chat', Date.now() - startTime, true, {
+      Logger.logApiCall("chat", Date.now() - startTime, true, {
         outputLength: output.length,
       });
 
@@ -130,12 +138,12 @@ export class AzureOpenAIService {
         metadata: {
           duration: Date.now() - startTime,
           timestamp: new Date().toISOString(),
-        }
+        },
       };
     } catch (error) {
       this.updateMetrics(Date.now() - startTime, false);
-      const handledError = ErrorHandler.handle(error, 'chat');
-      Logger.error('Chat execution failed', handledError);
+      const handledError = ErrorHandler.handle(error, "chat");
+      Logger.error("Chat execution failed", handledError);
       throw handledError;
     }
   }
@@ -152,16 +160,16 @@ export class AzureOpenAIService {
     }
 
     // Add user input
-    if (typeof input === 'string') {
+    if (typeof input === "string") {
       messages.push(new HumanMessage(input));
     } else if (Array.isArray(input)) {
       // Allow passing an array of message objects
-      input.forEach(msg => {
-        if (typeof msg === 'string') {
+      input.forEach((msg) => {
+        if (typeof msg === "string") {
           messages.push(new HumanMessage(msg));
-        } else if (msg.role === 'system') {
+        } else if (msg.role === "system") {
           messages.push(new SystemMessage(msg.content));
-        } else if (msg.role === 'assistant' || msg.role === 'ai') {
+        } else if (msg.role === "assistant" || msg.role === "ai") {
           messages.push(new AIMessage(msg.content));
         } else {
           messages.push(new HumanMessage(msg.content));
@@ -176,7 +184,7 @@ export class AzureOpenAIService {
    * Stream response (for future implementation)
    */
   async *stream(input, options = {}) {
-    Logger.info('Starting streaming response');
+    Logger.info("Starting streaming response");
 
     try {
       const messages = this.buildMessages(input, options);
@@ -188,12 +196,12 @@ export class AzureOpenAIService {
       const stream = await streamingModel.stream(messages);
 
       for await (const chunk of stream) {
-        const text = chunk.content || '';
+        const text = chunk.content || "";
         yield text;
       }
     } catch (error) {
-      const handledError = ErrorHandler.handle(error, 'stream');
-      Logger.error('Streaming failed', handledError);
+      const handledError = ErrorHandler.handle(error, "stream");
+      Logger.error("Streaming failed", handledError);
       throw handledError;
     }
   }
@@ -230,8 +238,10 @@ export class AzureOpenAIService {
     }
 
     // Update average latency
-    const prevTotal = this.metrics.averageLatency * (this.metrics.totalCalls - 1);
-    this.metrics.averageLatency = (prevTotal + latency) / this.metrics.totalCalls;
+    const prevTotal =
+      this.metrics.averageLatency * (this.metrics.totalCalls - 1);
+    this.metrics.averageLatency =
+      (prevTotal + latency) / this.metrics.totalCalls;
   }
 
   /**
@@ -240,9 +250,12 @@ export class AzureOpenAIService {
   getMetrics() {
     return {
       ...this.metrics,
-      successRate: this.metrics.totalCalls > 0
-        ? ((this.metrics.totalCalls - this.metrics.errors) / this.metrics.totalCalls) * 100
-        : 0,
+      successRate:
+        this.metrics.totalCalls > 0
+          ? ((this.metrics.totalCalls - this.metrics.errors) /
+              this.metrics.totalCalls) *
+            100
+          : 0,
       uptime: process.uptime(),
     };
   }
@@ -254,13 +267,13 @@ export class AzureOpenAIService {
     try {
       await this.testConnection();
       return {
-        status: 'healthy',
+        status: "healthy",
         metrics: this.getMetrics(),
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
       return {
-        status: 'unhealthy',
+        status: "unhealthy",
         error: error.message,
         metrics: this.getMetrics(),
         timestamp: new Date().toISOString(),

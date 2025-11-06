@@ -1,18 +1,16 @@
 // src/services/azure-openai-service.js
 /**
  * Azure OpenAI Service
- * Main service for interacting with Azure OpenAI using LangChain
+ * Simplified service for interacting with Azure OpenAI using LangChain
  */
 
 import { AzureChatOpenAI } from '@langchain/azure-openai';
 import { HumanMessage, SystemMessage, AIMessage } from '@langchain/core/messages';
 import { StringOutputParser } from '@langchain/core/output_parsers';
-import { RunnableSequence } from '@langchain/core/runnables';
 import { Logger } from '../utils/logger.js';
 import { ErrorHandler, AzureOpenAIError } from '../utils/errors.js';
 import { RetryWrapper } from '../utils/retry.js';
 import { azureConfig } from '../config/config.js';
-import { getPromptManager } from '../prompts/prompt-manager.js';
 
 /**
  * Azure OpenAI Service class
@@ -23,9 +21,8 @@ export class AzureOpenAIService {
       ...azureConfig,
       ...config
     };
-    
+
     this.model = null;
-    this.promptManager = getPromptManager();
     this.outputParser = new StringOutputParser();
     this.conversations = new Map();
     this.metrics = {
@@ -42,7 +39,7 @@ export class AzureOpenAIService {
   async initialize() {
     try {
       Logger.info('Initializing Azure OpenAI Service');
-      
+
       this.model = new AzureChatOpenAI({
         azureOpenAIApiKey: this.config.apiKey,
         azureOpenAIApiInstanceName: this.extractInstanceName(this.config.endpoint),
@@ -56,7 +53,7 @@ export class AzureOpenAIService {
 
       // Test connection
       await this.testConnection();
-      
+
       Logger.info('Azure OpenAI Service initialized successfully');
       return this;
     } catch (error) {
@@ -86,228 +83,169 @@ export class AzureOpenAIService {
       await this.model.invoke([testMessage]);
       Logger.info('Connection test successful');
     } catch (error) {
-      throw new AzureOpenAIError('Connection test failed', 500, { 
-        originalError: error.message 
+      throw new AzureOpenAIError('Connection test failed', 500, {
+        originalError: error.message
       });
     }
   }
 
   /**
-   * Execute a zero-shot prompt
+   * Execute a chat completion
+   * @param {string|Array} input - User message or array of messages
+   * @param {Object} options - Optional parameters
+   * @param {string} options.systemMessage - System message to include
+   * @param {string} options.conversationId - Conversation ID for history
+   * @param {number} options.temperature - Override default temperature
+   * @param {number} options.maxTokens - Override default max tokens
    */
-  async executeZeroShot(input, options = {}) {
+  async chat(input, options = {}) {
     const startTime = Date.now();
-    
+
     try {
-      // Create or get prompt
-      const prompt = await this.promptManager.createPrompt('zero-shot', options);
-      
-      // Format the prompt with input
-      const formattedPrompt = await prompt.format(input);
-      
+      // Build messages
+      const messages = this.buildMessages(input, options);
+
+      // Log the prompt
+      Logger.logPrompt('chat', JSON.stringify(messages), null, {
+        conversationId: options.conversationId,
+      });
+
       // Execute with retry logic
       const response = await RetryWrapper.execute(async () => {
-        const messages = [new HumanMessage(formattedPrompt)];
-        
-        if (options.systemMessage) {
-          messages.unshift(new SystemMessage(options.systemMessage));
-        }
-        
-        return await this.model.invoke(messages);
+        return await this.model.invoke(messages, {
+          temperature: options.temperature ?? this.config.temperature,
+          maxTokens: options.maxTokens ?? this.config.maxTokens,
+        });
       });
 
       // Parse output
       const output = await this.outputParser.parse(response);
-      
+
+      // Update conversation history if provided
+      if (options.conversationId) {
+        this.addToConversation(options.conversationId, 'human',
+          typeof input === 'string' ? input : input[input.length - 1]);
+        this.addToConversation(options.conversationId, 'ai', output);
+      }
+
       // Update metrics
       this.updateMetrics(Date.now() - startTime, true);
-      
-      Logger.logApiCall('executeZeroShot', Date.now() - startTime, true, {
-        inputLength: formattedPrompt.length,
+
+      Logger.logApiCall('chat', Date.now() - startTime, true, {
+        conversationId: options.conversationId,
         outputLength: output.length,
       });
 
       return {
         output,
-        prompt: formattedPrompt,
         raw: response,
         metadata: {
-          strategy: 'zero-shot',
           duration: Date.now() - startTime,
           timestamp: new Date().toISOString(),
         }
       };
     } catch (error) {
       this.updateMetrics(Date.now() - startTime, false);
-      const handledError = ErrorHandler.handle(error, 'executeZeroShot');
-      Logger.error('Zero-shot execution failed', handledError);
+      const handledError = ErrorHandler.handle(error, 'chat');
+      Logger.error('Chat execution failed', handledError);
       throw handledError;
     }
   }
 
   /**
-   * Execute with a specific prompt strategy
+   * Build messages array from input and options
    */
-  async executeWithStrategy(strategy, input, options = {}) {
-    const startTime = Date.now();
-    
-    try {
-      // Create prompt with specified strategy
-      const prompt = await this.promptManager.createPrompt(strategy, options);
-      
-      // Format the prompt
-      const formattedPrompt = await prompt.format(input);
-      
-      // Create message based on strategy
-      const messages = this.createMessages(formattedPrompt, options);
-      
-      // Execute with retry
-      const response = await RetryWrapper.execute(async () => {
-        return await this.model.invoke(messages);
-      });
-
-      // Parse output
-      const output = await this.outputParser.parse(response);
-      
-      // Post-process based on strategy
-      const processedOutput = await this.postProcessOutput(output, strategy, options);
-      
-      // Update metrics
-      this.updateMetrics(Date.now() - startTime, true);
-      
-      return {
-        output: processedOutput,
-        prompt: formattedPrompt,
-        raw: response,
-        metadata: {
-          strategy,
-          duration: Date.now() - startTime,
-          timestamp: new Date().toISOString(),
-        }
-      };
-    } catch (error) {
-      this.updateMetrics(Date.now() - startTime, false);
-      const handledError = ErrorHandler.handle(error, `executeWithStrategy:${strategy}`);
-      Logger.error(`Execution failed for strategy: ${strategy}`, handledError);
-      throw handledError;
-    }
-  }
-
-  /**
-   * Execute few-shot prompting (placeholder)
-   */
-  async executeFewShot(input, examples = [], options = {}) {
-    Logger.info('Executing few-shot prompt (using placeholder implementation)');
-    
-    return this.executeWithStrategy('few-shot', input, {
-      ...options,
-      examples,
-    });
-  }
-
-  /**
-   * Execute chain-of-thought prompting (placeholder)
-   */
-  async executeChainOfThought(input, options = {}) {
-    Logger.info('Executing chain-of-thought prompt (using placeholder implementation)');
-    
-    return this.executeWithStrategy('chain-of-thought', input, options);
-  }
-
-  /**
-   * Execute retrieval-augmented prompting (placeholder)
-   */
-  async executeRAG(input, context = [], options = {}) {
-    Logger.info('Executing RAG prompt (using placeholder implementation)');
-    
-    return this.executeWithStrategy('retrieval-augmented', input, {
-      ...options,
-      context,
-    });
-  }
-
-  /**
-   * Execute agent-based prompting (placeholder)
-   */
-  async executeAgent(task, tools = [], options = {}) {
-    Logger.warn('Agent-based prompting not yet implemented');
-    
-    // Placeholder implementation
-    return {
-      output: 'Agent-based prompting will be implemented in future versions',
-      metadata: {
-        strategy: 'agent',
-        status: 'not-implemented',
-        availableTools: tools.map(t => t.name || t),
-      }
-    };
-  }
-
-  /**
-   * Stream response (placeholder for streaming support)
-   */
-  async *streamResponse(input, options = {}) {
-    Logger.info('Starting streaming response');
-    
-    // TODO: Implement actual streaming
-    const response = await this.executeZeroShot(input, options);
-    
-    // Simulate streaming by yielding chunks
-    const chunks = response.output.match(/.{1,50}/g) || [];
-    for (const chunk of chunks) {
-      yield chunk;
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-  }
-
-  /**
-   * Create messages based on options
-   */
-  createMessages(prompt, options = {}) {
+  buildMessages(input, options = {}) {
     const messages = [];
-    
+
+    // Add system message if provided
     if (options.systemMessage) {
       messages.push(new SystemMessage(options.systemMessage));
     }
-    
+
+    // Add conversation history if conversationId provided
     if (options.conversationId) {
       const history = this.getConversationHistory(options.conversationId);
       messages.push(...history);
     }
-    
-    messages.push(new HumanMessage(prompt));
-    
+
+    // Add user input
+    if (typeof input === 'string') {
+      messages.push(new HumanMessage(input));
+    } else if (Array.isArray(input)) {
+      // Allow passing an array of message objects
+      input.forEach(msg => {
+        if (typeof msg === 'string') {
+          messages.push(new HumanMessage(msg));
+        } else if (msg.role === 'system') {
+          messages.push(new SystemMessage(msg.content));
+        } else if (msg.role === 'assistant' || msg.role === 'ai') {
+          messages.push(new AIMessage(msg.content));
+        } else {
+          messages.push(new HumanMessage(msg.content));
+        }
+      });
+    }
+
     return messages;
   }
 
   /**
-   * Post-process output based on strategy
+   * Stream response (for future implementation)
    */
-  async postProcessOutput(output, strategy, options = {}) {
-    switch (strategy) {
-      case 'zero-shot':
-        return output;
-        
-      case 'chain-of-thought':
-        // Extract final answer from reasoning
-        const parts = output.split(/Final Answer:?/i);
-        return parts[parts.length - 1].trim();
-        
-      case 'retrieval-augmented':
-        // Clean up citations if needed
-        return output.replace(/\[[\d,\s]+\]/g, '');
-        
-      default:
-        return output;
+  async *stream(input, options = {}) {
+    Logger.info('Starting streaming response');
+
+    try {
+      const messages = this.buildMessages(input, options);
+
+      // Enable streaming for this request
+      const streamingModel = this.model.bind({ streaming: true });
+
+      // Stream the response
+      const stream = await streamingModel.stream(messages);
+
+      for await (const chunk of stream) {
+        const text = chunk.content || '';
+        yield text;
+      }
+    } catch (error) {
+      const handledError = ErrorHandler.handle(error, 'stream');
+      Logger.error('Streaming failed', handledError);
+      throw handledError;
     }
+  }
+
+  /**
+   * Batch process multiple inputs
+   */
+  async batchProcess(inputs, options = {}) {
+    Logger.info(`Starting batch processing for ${inputs.length} inputs`);
+
+    const results = [];
+    const errors = [];
+
+    for (let i = 0; i < inputs.length; i++) {
+      try {
+        const result = await this.chat(inputs[i], options);
+        results.push({ index: i, ...result });
+      } catch (error) {
+        errors.push({ index: i, input: inputs[i], error });
+        Logger.error(`Batch processing failed for input ${i}`, error);
+      }
+    }
+
+    return { results, errors };
   }
 
   /**
    * Manage conversation history
    */
-  startConversation(conversationId) {
-    this.conversations.set(conversationId, []);
-    return conversationId;
+  startConversation(conversationId = null) {
+    const id = conversationId || `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    this.conversations.set(id, []);
+    Logger.debug('Started conversation', { conversationId: id });
+    return id;
   }
 
   /**
@@ -317,11 +255,11 @@ export class AzureOpenAIService {
     if (!this.conversations.has(conversationId)) {
       this.startConversation(conversationId);
     }
-    
-    const message = role === 'human' 
+
+    const message = role === 'human'
       ? new HumanMessage(content)
       : new AIMessage(content);
-    
+
     this.conversations.get(conversationId).push(message);
   }
 
@@ -337,52 +275,15 @@ export class AzureOpenAIService {
    */
   clearConversation(conversationId) {
     this.conversations.delete(conversationId);
+    Logger.debug('Cleared conversation', { conversationId });
   }
 
   /**
-   * Create a chain of operations
+   * Clear all conversations
    */
-  createChain(operations) {
-    return RunnableSequence.from(operations.map(op => {
-      if (typeof op === 'function') {
-        return op;
-      }
-      if (op.type === 'prompt') {
-        return async (input) => {
-          const prompt = await this.promptManager.createPrompt(op.strategy, op.options);
-          return prompt.format(input);
-        };
-      }
-      if (op.type === 'model') {
-        return this.model;
-      }
-      if (op.type === 'parser') {
-        return this.outputParser;
-      }
-      return op;
-    }));
-  }
-
-  /**
-   * Batch processing
-   */
-  async batchProcess(inputs, strategy = 'zero-shot', options = {}) {
-    Logger.info(`Starting batch processing for ${inputs.length} inputs`);
-    
-    const results = [];
-    const errors = [];
-    
-    for (let i = 0; i < inputs.length; i++) {
-      try {
-        const result = await this.executeWithStrategy(strategy, inputs[i], options);
-        results.push(result);
-      } catch (error) {
-        errors.push({ index: i, input: inputs[i], error });
-        Logger.error(`Batch processing failed for input ${i}`, error);
-      }
-    }
-    
-    return { results, errors };
+  clearAllConversations() {
+    this.conversations.clear();
+    Logger.debug('Cleared all conversations');
   }
 
   /**
@@ -393,7 +294,7 @@ export class AzureOpenAIService {
     if (!success) {
       this.metrics.errors++;
     }
-    
+
     // Update average latency
     const prevTotal = this.metrics.averageLatency * (this.metrics.totalCalls - 1);
     this.metrics.averageLatency = (prevTotal + latency) / this.metrics.totalCalls;
@@ -405,7 +306,9 @@ export class AzureOpenAIService {
   getMetrics() {
     return {
       ...this.metrics,
-      successRate: ((this.metrics.totalCalls - this.metrics.errors) / this.metrics.totalCalls) * 100,
+      successRate: this.metrics.totalCalls > 0
+        ? ((this.metrics.totalCalls - this.metrics.errors) / this.metrics.totalCalls) * 100
+        : 0,
       uptime: process.uptime(),
     };
   }

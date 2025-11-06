@@ -1,57 +1,43 @@
 // src/index.js
 /**
  * Azure OpenAI LangChain Wrapper
- * Main entry point and exports
+ * Simplified entry point and exports
  */
 
-// Core services
+// Core service
 export { AzureOpenAIService, createAzureOpenAIService } from './services/azure-openai-service.js';
-
-// Prompt management
-export { 
-  PromptManager, 
-  getPromptManager, 
-  PromptStrategy,
-  prompts 
-} from './prompts/prompt-manager.js';
-
-// Prompt strategies
-export { ZeroShotPrompt, createZeroShotPrompt } from './prompts/strategies/zero-shot.js';
-export { FewShotPrompt, createFewShotPrompt } from './prompts/strategies/few-shot.js';
-export { ChainOfThoughtPrompt, createChainOfThoughtPrompt } from './prompts/strategies/chain-of-thought.js';
-export { RetrievalAugmentedPrompt, createRetrievalAugmentedPrompt } from './prompts/strategies/retrieval-augmented.js';
-
-// Base classes
-export { BasePromptStrategy, PromptBuilder } from './prompts/base-prompt.js';
 
 // Utilities
 export { Logger } from './utils/logger.js';
-export { 
+export {
   BaseError,
   ConfigurationError,
   AzureOpenAIError,
   PromptTemplateError,
   RateLimitError,
   ValidationError,
-  ErrorHandler 
+  ErrorHandler
 } from './utils/errors.js';
-export { RetryWrapper, RetryOptions, withRetry } from './utils/retry.js';
+export { RetryWrapper } from './utils/retry.js';
 
 // Configuration
 export { config, azureConfig, appConfig, rateLimitConfig } from './config/config.js';
 
 /**
- * Quick start helper
+ * Quick start helper - creates and initializes service with convenience methods
+ * @param {Object} options - Configuration options to override defaults
+ * @returns {Object} Service instance with convenience methods
  */
 export async function quickStart(options = {}) {
   const service = await createAzureOpenAIService(options);
   return {
     service,
-    // Convenience methods
-    zeroShot: (input, opts) => service.executeZeroShot(input, opts),
-    fewShot: (input, examples, opts) => service.executeFewShot(input, examples, opts),
-    chainOfThought: (input, opts) => service.executeChainOfThought(input, opts),
-    rag: (input, context, opts) => service.executeRAG(input, context, opts),
+    // Convenience method for chat
+    chat: (input, opts) => service.chat(input, opts),
+    // Convenience method for streaming
+    stream: (input, opts) => service.stream(input, opts),
+    // Convenience method for batch processing
+    batch: (inputs, opts) => service.batchProcess(inputs, opts),
   };
 }
 
@@ -60,6 +46,4 @@ export default {
   AzureOpenAIService,
   createAzureOpenAIService,
   quickStart,
-  PromptManager,
-  getPromptManager,
 };

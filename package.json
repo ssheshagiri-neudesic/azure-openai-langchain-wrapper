@@ -25,7 +25,6 @@
     "langchain": "^0.2.0",
     "winston": "^3.11.0",
     "dotenv": "^16.4.5",
-    "joi": "^17.12.0",
     "p-retry": "^6.2.0"
   },
   "devDependencies": {

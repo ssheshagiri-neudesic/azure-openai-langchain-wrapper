@@ -1,0 +1,36 @@
+{
+  "name": "azure-openai-langchain-wrapper",
+  "version": "1.0.0",
+  "description": "A modular wrapper service for Azure OpenAI using LangChain",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test src/**/*.test.js"
+  },
+  "keywords": [
+    "azure",
+    "openai",
+    "langchain",
+    "ai",
+    "llm"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@azure/openai": "^1.0.0-beta.12",
+    "@langchain/azure-openai": "^0.0.10",
+    "@langchain/core": "^0.2.0",
+    "langchain": "^0.2.0",
+    "winston": "^3.11.0",
+    "dotenv": "^16.4.5",
+    "joi": "^17.12.0",
+    "p-retry": "^6.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.4"
+  }
+}

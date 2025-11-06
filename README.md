@@ -49,6 +49,20 @@ LOG_LEVEL=info
 
 **Where to find your Azure OpenAI stuff:**
 - API Key: Azure Portal → Your OpenAI Resource → Keys and Endpoint
+- Endpoint: Same place, looks like `https://your-name.openai.azure.com`
+- Deployment Name: Azure Portal → Your OpenAI Resource → Model deployments
+
+### 3. Verify Your Setup
+
+Run the setup checker to make sure everything is configured correctly:
+
+```bash
+node check-setup.js
+```
+
+This will tell you if anything is missing or misconfigured.
+
+### 4. Run the Examples
 - Endpoint: Same place as the API key
 - Deployment Name: Azure Portal → Your OpenAI Resource → Model deployments
 
@@ -215,13 +229,71 @@ azure-openai-langchain-wrapper/
 5. **Lower temperature for consistency** - Use 0.3 or lower for more predictable outputs
 6. **Higher temperature for creativity** - Use 0.9+ for creative tasks
 
-## Common Issues
+## Common Issues & Troubleshooting
 
-**"Configuration error"** - Check your .env file has all required values
+### Connection Test Failed
 
-**"Rate limit exceeded"** - You're making too many requests. The wrapper will auto-retry, but consider adding delays or using batch processing
+If you see `Connection test failed` error:
 
-**"Invalid deployment"** - Make sure your AZURE_OPENAI_DEPLOYMENT_NAME matches what's in Azure Portal
+1. **Run the setup checker:**
+   ```bash
+   node check-setup.js
+   ```
+
+2. **Common causes:**
+   - **Wrong endpoint format** - Most common issue! Your endpoint should be:
+     - ✅ Correct: `https://your-name.openai.azure.com`
+     - ❌ Wrong: `https://your-name.cognitiveservices.azure.com`
+   - Missing or incorrect API key
+   - Deployment name doesn't exist in your Azure OpenAI resource
+   - Network/firewall issues
+
+3. **Verify your Azure OpenAI resource:**
+   - Go to Azure Portal
+   - Navigate to your Azure OpenAI resource
+   - Check "Keys and Endpoint" section
+   - **Important**: Make sure the endpoint ends with `.openai.azure.com`
+   - Check "Model deployments" - make sure your deployment name matches
+
+### Wrong Endpoint Format (ENOTFOUND error)
+
+If you see `getaddrinfo ENOTFOUND` with `cognitiveservices.azure.com`:
+
+```bash
+# WRONG ❌
+AZURE_OPENAI_API_ENDPOINT=https://your-name.cognitiveservices.azure.com
+
+# CORRECT ✅
+AZURE_OPENAI_API_ENDPOINT=https://your-name.openai.azure.com
+```
+
+Azure OpenAI uses a different endpoint format than regular Cognitive Services!
+
+### Configuration Errors
+
+**"Missing required Azure OpenAI configuration"** 
+- Make sure you have a `.env` file (copy from `.env.example`)
+- Check all required fields are filled in (not placeholder values)
+
+### Rate Limit Errors
+
+**"Rate limit exceeded"** 
+- You're making too many requests
+- The wrapper will auto-retry with exponential backoff
+- Consider using batch processing or adding delays between requests
+
+### Invalid Deployment Error
+
+**"Invalid deployment name"**
+- Double-check your `AZURE_OPENAI_DEPLOYMENT_NAME` matches exactly what's in Azure Portal
+- Deployment names are case-sensitive
+
+### Other Issues
+
+Run with debug logging to see what's happening:
+```bash
+LOG_LEVEL=debug node examples/basic-usage.js
+```
 
 ## Testing
 

@@ -72,9 +72,7 @@ export class AzureOpenAIService {
    * Extract instance name from endpoint
    */
   extractInstanceName(endpoint) {
-    const match = endpoint.match(
-      /https:\/\/(.+?)\.cognitiveservices\.azure\.com/
-    );
+    const match = endpoint.match(/https:\/\/(.+?)\.openai\.azure\.com/);
     if (!match) {
       throw new AzureOpenAIError("Invalid Azure OpenAI endpoint format");
     }
@@ -90,9 +88,15 @@ export class AzureOpenAIService {
       await this.model.invoke([testMessage]);
       Logger.info("Connection test successful");
     } catch (error) {
-      throw new AzureOpenAIError("Connection test failed", 500, {
-        originalError: error.message,
-      });
+      Logger.error("Connection test failed with error:", error);
+      throw new AzureOpenAIError(
+        `Connection test failed: ${error.message}`,
+        500,
+        {
+          originalError: error.message,
+          stack: error.stack,
+        }
+      );
     }
   }
 

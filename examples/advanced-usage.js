@@ -219,58 +219,10 @@ async function concurrentProcessing() {
 }
 
 /**
- * Example 5: Multi-step conversation with context building
- */
-async function multiStepConversation() {
-  console.log('\n=== Advanced Example 5: Multi-Step Conversation ===');
-
-  const service = await createAzureOpenAIService();
-  const convId = service.startConversation();
-
-  const steps = [
-    {
-      message: 'I need help planning a Python project.',
-      systemMsg: 'You are a helpful software architect.'
-    },
-    {
-      message: 'It should be a REST API for a todo application.',
-      systemMsg: 'You are a helpful software architect.'
-    },
-    {
-      message: 'What framework would you recommend?',
-      systemMsg: 'You are a helpful software architect.'
-    },
-    {
-      message: 'Can you outline the project structure?',
-      systemMsg: 'You are a helpful software architect.'
-    }
-  ];
-
-  console.log('Multi-step conversation:\n');
-
-  for (const [index, step] of steps.entries()) {
-    console.log(`User: ${step.message}`);
-
-    const result = await service.chat(step.message, {
-      conversationId: convId,
-      systemMessage: step.systemMsg
-    });
-
-    console.log(`AI: ${result.output.substring(0, 150)}...\n`);
-  }
-
-  // Conversation history
-  const history = service.getConversationHistory(convId);
-  console.log(`Total messages in conversation: ${history.length}`);
-
-  service.clearConversation(convId);
-}
-
-/**
- * Example 6: Response validation and retry on invalid output
+ * Example 5: Response validation and retry on invalid output
  */
 async function responseValidation() {
-  console.log('\n=== Advanced Example 6: Response Validation ===');
+  console.log('\n=== Advanced Example 5: Response Validation ===');
 
   const service = await createAzureOpenAIService();
 
@@ -316,10 +268,10 @@ async function responseValidation() {
 }
 
 /**
- * Example 7: Building a simple RAG pattern manually
+ * Example 6: Building a simple RAG pattern manually
  */
 async function simpleRAGPattern() {
-  console.log('\n=== Advanced Example 7: Simple RAG Pattern ===');
+  console.log('\n=== Advanced Example 6: Simple RAG Pattern ===');
 
   const service = await createAzureOpenAIService();
 
@@ -371,10 +323,10 @@ Answer:`;
 }
 
 /**
- * Example 8: Implementing request/response middleware
+ * Example 7: Implementing request/response middleware
  */
 async function middlewarePattern() {
-  console.log('\n=== Advanced Example 8: Middleware Pattern ===');
+  console.log('\n=== Advanced Example 7: Middleware Pattern ===');
 
   class ServiceWithMiddleware {
     constructor(service) {
@@ -449,7 +401,6 @@ async function runAllAdvancedExamples() {
     structuredOutputParsing,
     customRetryLogic,
     concurrentProcessing,
-    multiStepConversation,
     responseValidation,
     simpleRAGPattern,
     middlewarePattern
@@ -479,7 +430,6 @@ export {
   structuredOutputParsing,
   customRetryLogic,
   concurrentProcessing,
-  multiStepConversation,
   responseValidation,
   simpleRAGPattern,
   middlewarePattern

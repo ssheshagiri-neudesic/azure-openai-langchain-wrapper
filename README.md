@@ -18,7 +18,6 @@ A production-ready, modular JavaScript/TypeScript wrapper service for Azure Open
   - Configuration validation with Joi
   - Request/response caching
   - Batch processing support
-  - Conversation management
   - Health checks and metrics
 
 ## 📁 Project Structure
@@ -172,23 +171,6 @@ const { results, errors } = await service.batchProcess(
   inputs,
   'zero-shot',
   { maxTokens: 100 }
-);
-```
-
-### Conversation Management
-
-```javascript
-// Start a conversation
-const conversationId = service.startConversation('chat-123');
-
-// Add messages
-service.addToConversation(conversationId, 'human', 'Hello');
-service.addToConversation(conversationId, 'ai', 'Hi there!');
-
-// Continue conversation with context
-const response = await service.executeZeroShot(
-  { input: 'What did I just say?' },
-  { conversationId }
 );
 ```
 
@@ -348,9 +330,11 @@ The service is designed to be easily extensible:
 ### Main Service
 
 - `createAzureOpenAIService(config)` - Create and initialize service
+- `service.chat(input, options)` - Execute a chat completion
+- `service.stream(input, options)` - Stream a chat response
+- `service.batchProcess(inputs, options)` - Process multiple inputs
 - `service.executeZeroShot(input, options)` - Execute zero-shot prompt
 - `service.executeWithStrategy(strategy, input, options)` - Execute with specific strategy
-- `service.batchProcess(inputs, strategy, options)` - Process multiple inputs
 - `service.healthCheck()` - Check service health
 
 ### Prompt Manager

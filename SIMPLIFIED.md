@@ -36,7 +36,6 @@ src/
 - ✅ **Error Handling** - Comprehensive custom error hierarchy
 - ✅ **Logging** - Structured logging with Winston
 - ✅ **Retry Logic** - Exponential backoff with jitter using p-retry
-- ✅ **Conversation Management** - Multi-turn conversations with history
 - ✅ **Streaming Support** - Real streaming using LangChain's stream API
 - ✅ **Batch Processing** - Process multiple inputs sequentially
 - ✅ **Metrics** - Track calls, errors, latency, success rate
@@ -62,23 +61,6 @@ const result = await service.chat('Write a haiku about coding', {
   temperature: 0.9
 });
 console.log(result.output);
-```
-
-### Conversation with History
-
-```javascript
-// Start a conversation
-const convId = service.startConversation();
-
-// First message
-await service.chat('My name is Alice', { conversationId: convId });
-
-// Second message - service remembers context
-const response = await service.chat('What is my name?', { conversationId: convId });
-console.log(response.output); // Should mention "Alice"
-
-// Clear conversation when done
-service.clearConversation(convId);
 ```
 
 ### Streaming Responses

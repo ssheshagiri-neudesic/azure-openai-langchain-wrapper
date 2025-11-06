@@ -36,37 +36,10 @@ async function chatWithSystemMessage() {
 }
 
 /**
- * Example 3: Conversation with history
- */
-async function conversationWithHistory() {
-  console.log('\n=== Example 3: Conversation with History ===');
-
-  const service = await createAzureOpenAIService();
-
-  // Start a conversation
-  const convId = service.startConversation();
-
-  // First message
-  const response1 = await service.chat('My name is Alice and I like programming.', {
-    conversationId: convId
-  });
-  console.log('AI:', response1.output);
-
-  // Second message - service remembers the context
-  const response2 = await service.chat('What is my name and what do I like?', {
-    conversationId: convId
-  });
-  console.log('AI:', response2.output);
-
-  // Clean up
-  service.clearConversation(convId);
-}
-
-/**
- * Example 4: Streaming response
+ * Example 3: Streaming response
  */
 async function streamingResponse() {
-  console.log('\n=== Example 4: Streaming Response ===');
+  console.log('\n=== Example 3: Streaming Response ===');
 
   const service = await createAzureOpenAIService();
 
@@ -78,10 +51,10 @@ async function streamingResponse() {
 }
 
 /**
- * Example 5: Batch processing
+ * Example 4: Batch processing
  */
 async function batchProcessing() {
-  console.log('\n=== Example 5: Batch Processing ===');
+  console.log('\n=== Example 4: Batch Processing ===');
 
   const service = await createAzureOpenAIService();
 
@@ -104,10 +77,10 @@ async function batchProcessing() {
 }
 
 /**
- * Example 6: Custom temperature and max tokens
+ * Example 5: Custom temperature and max tokens
  */
 async function customParameters() {
-  console.log('\n=== Example 6: Custom Parameters ===');
+  console.log('\n=== Example 5: Custom Parameters ===');
 
   const service = await createAzureOpenAIService({
     temperature: 0.9,  // More creative
@@ -119,10 +92,10 @@ async function customParameters() {
 }
 
 /**
- * Example 7: Error handling
+ * Example 6: Error handling
  */
 async function errorHandling() {
-  console.log('\n=== Example 7: Error Handling ===');
+  console.log('\n=== Example 6: Error Handling ===');
 
   try {
     const service = await createAzureOpenAIService();
@@ -142,10 +115,10 @@ async function errorHandling() {
 }
 
 /**
- * Example 8: Health check and metrics
+ * Example 7: Health check and metrics
  */
 async function healthAndMetrics() {
-  console.log('\n=== Example 8: Health Check and Metrics ===');
+  console.log('\n=== Example 7: Health Check and Metrics ===');
 
   const service = await createAzureOpenAIService();
 
@@ -168,10 +141,10 @@ async function healthAndMetrics() {
 }
 
 /**
- * Example 9: Quick start helper
+ * Example 8: Quick start helper
  */
 async function quickStartHelper() {
-  console.log('\n=== Example 9: Quick Start Helper ===');
+  console.log('\n=== Example 8: Quick Start Helper ===');
 
   const { chat, stream, batch } = await quickStart();
 
@@ -181,48 +154,18 @@ async function quickStartHelper() {
 }
 
 /**
- * Example 10: Multiple conversations
- */
-async function multipleConversations() {
-  console.log('\n=== Example 10: Multiple Conversations ===');
-
-  const service = await createAzureOpenAIService();
-
-  // Conversation 1: Tech support
-  const support = service.startConversation();
-  const resp1 = await service.chat('I am having issues with my login', {
-    conversationId: support,
-    systemMessage: 'You are a technical support assistant.'
-  });
-  console.log('Support bot:', resp1.output.substring(0, 100) + '...');
-
-  // Conversation 2: Creative writing
-  const creative = service.startConversation();
-  const resp2 = await service.chat('Help me write a story about space', {
-    conversationId: creative,
-    systemMessage: 'You are a creative writing assistant.'
-  });
-  console.log('Creative bot:', resp2.output.substring(0, 100) + '...');
-
-  // Conversations are isolated from each other
-  service.clearAllConversations();
-}
-
-/**
  * Run all examples
  */
 async function runAllExamples() {
   const examples = [
     simpleChat,
     chatWithSystemMessage,
-    conversationWithHistory,
     streamingResponse,
     batchProcessing,
     customParameters,
     errorHandling,
     healthAndMetrics,
-    quickStartHelper,
-    multipleConversations
+    quickStartHelper
   ];
 
   for (const example of examples) {
@@ -244,12 +187,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 export {
   simpleChat,
   chatWithSystemMessage,
-  conversationWithHistory,
   streamingResponse,
   batchProcessing,
   customParameters,
   errorHandling,
   healthAndMetrics,
-  quickStartHelper,
-  multipleConversations
+  quickStartHelper
 };

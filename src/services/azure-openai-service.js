@@ -24,7 +24,6 @@ export class AzureOpenAIService {
 
     this.model = null;
     this.outputParser = new StringOutputParser();
-    this.conversations = new Map();
     this.metrics = {
       totalCalls: 0,
       totalTokens: 0,
@@ -94,7 +93,6 @@ export class AzureOpenAIService {
    * @param {string|Array} input - User message or array of messages
    * @param {Object} options - Optional parameters
    * @param {string} options.systemMessage - System message to include
-   * @param {string} options.conversationId - Conversation ID for history
    * @param {number} options.temperature - Override default temperature
    * @param {number} options.maxTokens - Override default max tokens
    */
@@ -106,9 +104,7 @@ export class AzureOpenAIService {
       const messages = this.buildMessages(input, options);
 
       // Log the prompt
-      Logger.logPrompt('chat', JSON.stringify(messages), null, {
-        conversationId: options.conversationId,
-      });
+      Logger.logPrompt('chat', JSON.stringify(messages), null, {});
 
       // Execute with retry logic
       const response = await RetryWrapper.execute(async () => {
@@ -121,18 +117,10 @@ export class AzureOpenAIService {
       // Parse output
       const output = await this.outputParser.parse(response);
 
-      // Update conversation history if provided
-      if (options.conversationId) {
-        this.addToConversation(options.conversationId, 'human',
-          typeof input === 'string' ? input : input[input.length - 1]);
-        this.addToConversation(options.conversationId, 'ai', output);
-      }
-
       // Update metrics
       this.updateMetrics(Date.now() - startTime, true);
 
       Logger.logApiCall('chat', Date.now() - startTime, true, {
-        conversationId: options.conversationId,
         outputLength: output.length,
       });
 
@@ -161,12 +149,6 @@ export class AzureOpenAIService {
     // Add system message if provided
     if (options.systemMessage) {
       messages.push(new SystemMessage(options.systemMessage));
-    }
-
-    // Add conversation history if conversationId provided
-    if (options.conversationId) {
-      const history = this.getConversationHistory(options.conversationId);
-      messages.push(...history);
     }
 
     // Add user input
@@ -236,54 +218,6 @@ export class AzureOpenAIService {
     }
 
     return { results, errors };
-  }
-
-  /**
-   * Manage conversation history
-   */
-  startConversation(conversationId = null) {
-    const id = conversationId || `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    this.conversations.set(id, []);
-    Logger.debug('Started conversation', { conversationId: id });
-    return id;
-  }
-
-  /**
-   * Add to conversation history
-   */
-  addToConversation(conversationId, role, content) {
-    if (!this.conversations.has(conversationId)) {
-      this.startConversation(conversationId);
-    }
-
-    const message = role === 'human'
-      ? new HumanMessage(content)
-      : new AIMessage(content);
-
-    this.conversations.get(conversationId).push(message);
-  }
-
-  /**
-   * Get conversation history
-   */
-  getConversationHistory(conversationId) {
-    return this.conversations.get(conversationId) || [];
-  }
-
-  /**
-   * Clear conversation
-   */
-  clearConversation(conversationId) {
-    this.conversations.delete(conversationId);
-    Logger.debug('Cleared conversation', { conversationId });
-  }
-
-  /**
-   * Clear all conversations
-   */
-  clearAllConversations() {
-    this.conversations.clear();
-    Logger.debug('Cleared all conversations');
   }
 
   /**

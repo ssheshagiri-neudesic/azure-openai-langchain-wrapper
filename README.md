@@ -1,26 +1,26 @@
 # Azure OpenAI LangChain Wrapper Service
 
-A production-ready, modular JavaScript/TypeScript wrapper service for Azure OpenAI using LangChain. This service implements clean architecture principles with comprehensive error handling, retry logic, and support for multiple prompting strategies.
+A production-ready, modular JavaScript/TypeScript wrapper service for Azure OpenAI utilizing LangChain. This service implements clean architecture principles with comprehensive error handling, retry logic, and support for multiple prompting strategies.
 
-## 🚀 Features
+## Features
 
-- **Clean Architecture**: Modular design with separation of concerns
+- **Clean Architecture**: Modular design with clear separation of concerns
 - **Multiple Prompting Strategies**:
-  - ✅ Zero-shot prompting (fully implemented)
-  - 🔄 Few-shot prompting (placeholder for expansion)
-  - 🔄 Chain-of-thought reasoning (placeholder for expansion)
-  - 🔄 Retrieval-augmented generation (placeholder for expansion)
-- **Production-Ready Features**:
+  - Zero-shot prompting (fully implemented)
+  - Few-shot prompting (extensible framework)
+  - Chain-of-thought reasoning (extensible framework)
+  - Retrieval-augmented generation (extensible framework)
+- **Production-Ready Capabilities**:
   - Comprehensive error handling with custom error classes
   - Retry logic with exponential backoff
-  - Circuit breaker pattern for resilience
+  - Circuit breaker pattern for system resilience
   - Structured logging with Winston
   - Configuration validation with Joi
-  - Request/response caching
+  - Request/response caching mechanisms
   - Batch processing support
-  - Health checks and metrics
+  - Health checks and performance metrics
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 azure-openai-langchain-wrapper/
@@ -49,7 +49,7 @@ azure-openai-langchain-wrapper/
     └── advanced-usage.js   # Advanced patterns
 ```
 
-## 🛠️ Installation
+## Installation
 
 1. Clone the repository:
 ```bash
@@ -68,7 +68,7 @@ cp .env.example .env
 # Edit .env with your Azure OpenAI credentials
 ```
 
-## ⚙️ Configuration
+## Configuration
 
 Create a `.env` file with your Azure OpenAI credentials:
 
@@ -88,7 +88,7 @@ ENABLE_RETRY=true
 MAX_RETRY_ATTEMPTS=3
 ```
 
-## 💻 Usage
+## Usage
 
 ### Quick Start
 
@@ -174,7 +174,7 @@ const { results, errors } = await service.batchProcess(
 );
 ```
 
-## 🎯 Prompting Strategies
+## Prompting Strategies
 
 ### Zero-Shot Prompting (Implemented)
 
@@ -214,7 +214,7 @@ const result = await service.executeRAG(
 );
 ```
 
-## 🔧 Advanced Features
+## Advanced Features
 
 ### Custom Prompt Strategies
 
@@ -278,7 +278,7 @@ const result = await RetryWrapper.executeWithCircuitBreaker(
 );
 ```
 
-## 📊 Monitoring
+## Monitoring
 
 ### Health Checks
 
@@ -297,7 +297,7 @@ console.log('Success rate:', metrics.successRate);
 console.log('Average latency:', metrics.averageLatency);
 ```
 
-## 🏗️ Extending the Service
+## Extending the Service
 
 ### Adding New Prompt Strategies
 
@@ -315,7 +315,7 @@ The service is designed to be easily extensible:
 - Add new retry strategies in `src/utils/retry.js`
 - Add new output parsers in the service
 
-## 🔍 Key Design Decisions
+## Key Design Decisions
 
 1. **ES Modules**: Using modern JavaScript modules for better tree-shaking and compatibility
 2. **Separation of Concerns**: Each component has a single responsibility
@@ -325,7 +325,7 @@ The service is designed to be easily extensible:
 6. **Error Boundaries**: Comprehensive error handling at each layer
 7. **Observability**: Built-in logging and metrics for production monitoring
 
-## 🚦 API Reference
+## API Reference
 
 ### Main Service
 
@@ -350,7 +350,7 @@ The service is designed to be easily extensible:
 - `ErrorHandler` - Error handling utilities
 - `RetryWrapper` - Retry logic implementation
 
-## 📝 Environment Variables
+## Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
@@ -364,33 +364,33 @@ The service is designed to be easily extensible:
 | `ENABLE_RETRY` | Enable retry logic | true |
 | `MAX_RETRY_ATTEMPTS` | Maximum retry attempts | 3 |
 
-## 🤝 Contributing
+## Contributing
 
-Contributions are welcome! The service is designed to be easily extensible:
+Contributions are welcome. The service is designed to be easily extensible:
 
 1. Fork the repository
 2. Create a feature branch
-3. Implement your feature (especially filling in placeholder strategies!)
+3. Implement your feature
 4. Add tests and examples
 5. Submit a pull request
 
-## 📄 License
+## License
 
 MIT
 
-## 🔮 Future Enhancements
+## Future Enhancements
 
-- [ ] Complete few-shot prompting implementation
-- [ ] Complete chain-of-thought implementation
-- [ ] Complete RAG implementation with vector stores
-- [ ] Add agent-based prompting
-- [ ] Add streaming support
-- [ ] Add TypeScript definitions
-- [ ] Add comprehensive test suite
-- [ ] Add performance benchmarks
-- [ ] Add OpenTelemetry integration
-- [ ] Add webhook support for async operations
+- Complete few-shot prompting implementation
+- Complete chain-of-thought implementation
+- Complete RAG implementation with vector stores
+- Add agent-based prompting
+- Add streaming support
+- Add TypeScript definitions
+- Add comprehensive test suite
+- Add performance benchmarks
+- Add OpenTelemetry integration
+- Add webhook support for async operations
 
-## 📞 Support
+## Support
 
 For issues, questions, or suggestions, please open an issue in the repository.
